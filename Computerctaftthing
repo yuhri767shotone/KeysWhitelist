@@ -2,7 +2,7 @@ print("password:")
 os.pullEvent=os.pullEventRaw
 input = read("*")
 
-if input == "silo123789" then
+if input == "password" then
 term.clear()
 term.setCursorPos(1,1)
 print("Please Proceed")
@@ -10,10 +10,10 @@ redstone.setOutput("left", true)
 sleep(3)
 redstone.setOutput("left", false)
 os.reboot()
-elseif inout == "abc" then
+elseif input == "abc" then
 term.clear()
-term.SetCursorPos(1,1)
-print("Welcome ot the terminal")
+term.setCursorPos(1,1)
+print("welcome to the OS terminal")
 sleep(1)
 error()
 else
