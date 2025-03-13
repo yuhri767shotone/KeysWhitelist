@@ -2,7 +2,7 @@ print("password:")
 os.pullEvent=os.pullEventRaw
 input = read("*")
 
-if input == "silo1278" then
+if input == "silo123789" then
 term.clear()
 term.setCursorPos(1,1)
 print("Please Proceed")
