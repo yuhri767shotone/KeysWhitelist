@@ -1,0 +1,47 @@
+local p = "pass" -- Password
+local a = "HomeDragonjava" -- Admin
+local t = false -- Tamper detection
+
+while true do
+    if not t then
+        io.write("Enter password: ")
+        local input = read()  -- Read user input
+        
+        if input == p then
+            redstone.setOutput("left", true)  -- Unlock system
+            print("Access Granted. Press CTRL+T to lock.")
+            
+            while true do
+                local event, key = os.pullEvent("key")
+                
+                if key == keys.t and os.getComputerLabel() == a then
+                    redstone.setOutput("left", false)  -- Lock system
+                    print("System unlocked.")
+                    break
+                elseif key == keys.t then
+                    os.reboot()  -- Unauthorized tamper
+                end
+            end
+        end
+        
+        local event, key = os.pullEvent("key")
+        if key == keys.t then
+            t = true
+            print("TAMPER DETECTED\nASK YOUR ADMINISTRATOR FOR MORE INFO")
+            if os.getComputerLabel() ~= a then
+                os.reboot()
+            end
+        end
+    else
+        local event, key = os.pullEvent("key")
+        if key == keys.t and os.getComputerLabel() == a then
+            t = false
+            redstone.setOutput("left", false)
+            print("System unlocked.")
+            break
+        elseif key == keys.t then
+            os.reboot()
+        end
+    end
+    sleep(0.1)
+end
