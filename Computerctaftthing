@@ -1,4 +1,4 @@
--- Client Code
+-- Client Codeh
 local requiredAccessLevel = 1  -- The minimum access level required
 local serverId = 41  -- The ID of the server computer
 
@@ -15,7 +15,7 @@ local function handleAuthenticationResponse(response)
         level = tonumber(level)
         
         -- If the level is "inf" (owner level), handle the owner-level access
-        if level == inf then
+        if level == math.huge then
             print("Owner access granted. Exiting...")
             error()  -- Terminate the program for owner access
             return true
