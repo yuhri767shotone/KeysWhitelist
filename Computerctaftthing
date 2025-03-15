@@ -1,39 +1,51 @@
--- Client Codeh
+-- Client Code
+
 local requiredAccessLevel = 1  -- The minimum access level required
 local serverId = 41  -- The ID of the server computer
 
 -- Function to handle the server's authentication response
 local function handleAuthenticationResponse(response)
-    if response == nil then
+    -- Check if the response is valid
+    if not response then
         print("Unknown response from server.")
         return false  -- Return false to indicate failure
     end
 
+    -- Match the response format "AUTH_SUCCESS:<level>"
     local status, level = response:match("AUTH_SUCCESS:(.-)$")
 
     if status == "AUTH_SUCCESS" then
-        level = tonumber(level)
-        
-        -- If the level is "inf" (owner level), handle the owner-level access
-        if level == math.huge then
+        -- Check if the level is "inf" (owner access) or a numeric level
+        if level == "inf" then
             print("Owner access granted. Exiting...")
             error()  -- Terminate the program for owner access
             return true
         end
+        
+        -- Convert level to a number (in case it's not "inf")
+        level = tonumber(level)  
 
-        -- Check if the level is greater than or equal to the required access level
-        if level >= requiredAccessLevel then
-            print("Access granted with level " .. level)
-            return true  -- Access granted
+        -- Check if the level is a valid number
+        if level then
+            -- Check if the level is greater than or equal to the required access level
+            if level >= requiredAccessLevel then
+                print("Access granted with level " .. level)
+                return true  -- Access granted
+            else
+                print("Access denied! Insufficient access level.")
+                return false  -- Insufficient access level
+            end
         else
-            print("Access denied! Insufficient access level.")
-            return false  -- Insufficient access level
+            -- If level is invalid (not a number or "inf")
+            print("Invalid access level received: " .. level)
+            return false
         end
     elseif response == "AUTH_DENIED" then
         print("Authentication failed! Employee ID not found.")
         return false  -- Authentication failed
     else
-        print("Unknown response from server.")
+        -- If the response doesn't match any known pattern
+        print("Unknown response from server: " .. response)
         return false  -- Invalid response
     end
 end
