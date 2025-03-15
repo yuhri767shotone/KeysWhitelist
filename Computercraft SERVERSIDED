@@ -1,6 +1,5 @@
--- Authentication Server Script
+-- Server side
 local modemSide = "back"  -- The side where the modem is connected
-local diskSide = "top"   -- The side where the disk with users.txt is connected
 local usersFile = "disk/users.txt"  -- Path to the user file
 
 -- Open the modem for communication
@@ -21,10 +20,14 @@ local function loadUsers()
 
     local file = fs.open(usersFile, "r")
     for line in file.readAll():gmatch("[^\r\n]+") do
-        -- Format: employee_id=rank (rank is now a number)
-        local id, rank = line:match("^(%d+)%=(%d+)$")
+        -- Format: employee_id=rank (math.huge for owner)
+        local id, rank = line:match("^(%d+)%=(.+)$")  -- Handle math.huge as a string
         if id and rank then
-            users[id] = tonumber(rank)  -- Convert rank to number and store it
+            if rank == "math.huge" then
+                users[id] = math.huge  -- Set math.huge for the owner
+            else
+                users[id] = tonumber(rank)  -- Store normal rank as number
+            end
         end
     end
     file.close()
@@ -34,8 +37,8 @@ end
 -- Function to handle authentication
 local function authenticateEmployee(id)
     local users = loadUsers()
-    local rank = users[id]  -- Check if the ID exists in users.txt
-    return rank  -- Return the rank number if found, nil if not
+    local rank = users[tostring(id)]  -- Check if the ID exists in users.txt
+    return rank  -- Return the rank if found, nil if not
 end
 
 -- Main server loop
@@ -50,9 +53,9 @@ while true do
         
         -- Respond with appropriate message
         if rank then
-            -- Send the rank number to the client if found
+            -- Send the rank to the client if found
             print("Authentication Success! Rank: " .. rank)
-            rednet.send(senderId, "AUTH_SUCCESS:" .. rank)  -- Send success message with rank number
+            rednet.send(senderId, "AUTH_SUCCESS:" .. tostring(rank))  -- Send success message with rank
         else
             -- Deny access if the ID doesn't exist
             print("Authentication Denied! Employee ID not found.")
