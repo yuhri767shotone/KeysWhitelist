@@ -1,76 +1,65 @@
--- Client Authentication Script with Anti-Tamper
-local modemSide = "back"  -- The side where the modem is connected
-local serverID = 41  -- The server ID you want to communicate with
+-- Client Code
+local requiredAccessLevel = 1  -- The minimum access level required
+local serverId = 41  -- The ID of the server computer
 
--- The required access level (e.g., 1 or higher)
-local requiredAccessLevel = 1
+-- Function to handle the server's authentication response
+local function handleAuthenticationResponse(response)
+    if response == nil then
+        print("Unknown response from server.")
+        return false  -- Return false to indicate failure
+    end
 
--- Anti-tamper functionality (prevents Ctrl+T from stopping the script)
-os.pullEvent = os.pullEventRaw
+    local status, level = response:match("AUTH_SUCCESS:(.-)$")
 
--- Open the modem for communication
-if not peripheral.isPresent(modemSide) or peripheral.getType(modemSide) ~= "modem" then
-    print("Error: Modem not found!")
-    return
-end
-rednet.open(modemSide)
-
--- Function to send authentication request
-local function authenticate(id)
-    rednet.send(serverID, id)  -- Send employee ID to server for authentication
-end
-
--- Function to handle the authentication result
-local function handleAuthenticationResult(message)
-    if message then
-        print("Received message: " .. message)  -- Debugging line
-        if message:sub(1, 12) == "AUTH_SUCCESS:" then
-            -- Parse the rank number from the message
-            local rank = message:sub(13)
-
-            -- Check if the rank is math.huge or inf (owner)
-            if rank == "math.huge" or rank == "inf" then
-                print("Owner access granted.")
-                -- Handle owner-specific behavior (e.g., give full access)
-            else
-                rank = tonumber(rank)
-                if rank and rank >= requiredAccessLevel then
-                    print("Access granted. Rank level " .. rank)
-                    -- Handle behavior for employees with sufficient rank
-                else
-                    print("Access denied. Rank " .. rank .. " is insufficient. Required level: " .. requiredAccessLevel)
-                end
-            end
-            -- Proceed with the rest of the client operations
-        elseif message == "AUTH_DENIED" then
-            print("Authentication Denied. Employee ID not found.")
-        else
-            print("Unknown response from server: " .. message)
+    if status == "AUTH_SUCCESS" then
+        level = tonumber(level)
+        
+        -- If the level is "inf" (owner level), handle the owner-level access
+        if level == inf then
+            print("Owner access granted. Exiting...")
+            error()  -- Terminate the program for owner access
+            return true
         end
+
+        -- Check if the level is greater than or equal to the required access level
+        if level >= requiredAccessLevel then
+            print("Access granted with level " .. level)
+            return true  -- Access granted
+        else
+            print("Access denied! Insufficient access level.")
+            return false  -- Insufficient access level
+        end
+    elseif response == "AUTH_DENIED" then
+        print("Authentication failed! Employee ID not found.")
+        return false  -- Authentication failed
     else
-        print("No response from server.")
+        print("Unknown response from server.")
+        return false  -- Invalid response
     end
 end
 
--- Main loop to continually prompt for user input
-while true do
-    term.clear()
-    term.setCursorPos(1, 1)
-    print("Enter Employee ID for Authentication:")
+-- Main authentication loop
+local function authenticate()
+    while true do
+        -- Request the employee ID from the user
+        print("Enter your Employee ID:")
+        local employeeID = read()
 
-    local employeeID = read()  -- User inputs employee ID
+        -- Send the employee ID to the server
+        rednet.send(serverId, employeeID)
 
-    if employeeID == "" then
-        print("Please enter a valid ID.")
-    else
-        authenticate(employeeID)  -- Send ID to the server for authentication
-        
-        -- Wait for the authentication response
-        local senderId, message = rednet.receive()
+        -- Wait for the server's response
+        local id, response = rednet.receive()
 
-        handleAuthenticationResult(message)  -- Handle the server's response
-        
-        -- Wait before the next input
-        sleep(2)
+        -- Handle the server's response
+        if handleAuthenticationResponse(response) then
+            break  -- If authentication is successful, exit the loop
+        else
+            -- If authentication failed, prompt again for Employee ID
+            print("Please try again.")
+        end
     end
 end
+
+-- Start the authentication process
+authenticate()
