@@ -1,25 +1,51 @@
 print("password:")
-os.pullEvent=os.pullEventRaw
-input = read("*")
+os.pullEvent = os.pullEventRaw  -- Anti-tamper: disable event hooks (e.g. Ctrl+T)
+local code = read("*")  -- Read the entered code with masked input
 
-if input == "password" then
-term.clear()
-term.setCursorPos(1,1)
-print("Please Proceed")
-redstone.setOutput("left", true)
-sleep(3)
-redstone.setOutput("left", false)
-os.reboot()
-elseif input == "abc" then
-term.clear()
-term.setCursorPos(1,1)
-print("welcome to the OS terminal")
-sleep(1)
-error()
+-- Send the entered code to the server for authentication
+local SERVER_ID = 41  -- Make sure this matches your server's ID
+rednet.send(SERVER_ID, code)
+
+-- Wait for the server's response (timeout after 5 seconds)
+local senderId, response = rednet.receive(5)
+
+if response then
+    -- If the server responded with success (with a rank)
+    if response:find("AUTH_SUCCESS:") then
+        local rank = response:match("AUTH_SUCCESS:(.+)")
+        if rank == "owner" then
+            term.clear()
+            term.setCursorPos(1,1)
+            print("welcome to the OS terminal")
+            sleep(1)
+            os.PullEventRaw = os.PullEvent
+            error()  -- Force close the program
+        else
+            term.clear()
+            term.setCursorPos(1,1)
+            print("Please Proceed")
+            redstone.setOutput("left", true)
+            sleep(3)
+            redstone.setOutput("left", false)
+            os.reboot()
+        end
+    elseif response == "AUTH_DENIED" then
+        term.clear()
+        term.setCursorPos(1,1)
+        print("Permission Denied")
+        sleep(2)
+        os.reboot()
+    else
+        term.clear()
+        term.setCursorPos(1,1)
+        print("Authentication Failed")
+        sleep(2)
+        os.reboot()
+    end
 else
-term.clear()
-term.setCursorPos(1,1)
-print("Permmision Denied")
-sleep(2)
-os.reboot()
+    term.clear()
+    term.setCursorPos(1,1)
+    print("No response from server")
+    sleep(2)
+    os.reboot()
 end
