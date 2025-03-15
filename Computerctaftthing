@@ -1,6 +1,6 @@
 -- Client Authentication Script with Anti-Tamper
 local modemSide = "back"  -- The side where the modem is connected
-local serverID = 1  -- The server ID you want to communicate with
+local serverID = 41  -- The server ID you want to communicate with
 
 -- The required access level (e.g., 1 or higher)
 local requiredAccessLevel = 2
@@ -28,8 +28,8 @@ local function handleAuthenticationResult(message)
             -- Parse the rank number from the message
             local rank = message:sub(13)
 
-            -- Check if the rank is math.huge (owner) or a numeric rank
-            if rank == "math.huge" then
+            -- Check if the rank is math.huge or inf (owner)
+            if rank == "math.huge" or rank == "inf" then
                 print("Owner access granted.")
                 -- Handle owner-specific behavior (e.g., give full access)
             else
