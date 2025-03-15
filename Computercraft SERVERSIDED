@@ -1,4 +1,4 @@
--- Server side
+-- Server side (using math.huge for the owner rank)
 local modemSide = "back"  -- The side where the modem is connected
 local usersFile = "disk/users.txt"  -- Path to the user file
 
