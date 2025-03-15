@@ -23,6 +23,7 @@ end
 -- Function to handle the authentication result
 local function handleAuthenticationResult(message)
     if message then
+        print("Received message: " .. message)  -- Debugging line
         if message:sub(1, 12) == "AUTH_SUCCESS:" then
             -- Parse the rank number from the message
             local rank = tonumber(message:sub(13))
@@ -36,26 +37,39 @@ local function handleAuthenticationResult(message)
                     print("Access granted. Rank level " .. rank)
                     -- Handle behavior for employees with sufficient rank
                 end
+                -- Proceed with the rest of the client operations
             else
                 print("Access denied. Rank " .. rank .. " is insufficient. Required level: " .. requiredAccessLevel)
             end
         elseif message == "AUTH_DENIED" then
             print("Authentication Denied. Employee ID not found.")
         else
-            print("Unknown response.")
+            print("Unknown response from server: " .. message)
         end
+    else
+        print("No response from server.")
     end
 end
 
--- Ask for Employee ID
-print("Enter Employee ID:")
-local employeeID = read()
+-- Main loop to continually prompt for user input
+while true do
+    term.clear()
+    term.setCursorPos(1, 1)
+    print("Enter Employee ID for Authentication:")
 
--- Authenticate employee
-authenticate(employeeID)
+    local employeeID = read()  -- User inputs employee ID
 
--- Listen for the response from the server
-local senderId, message = rednet.receive()
+    if employeeID == "" then
+        print("Please enter a valid ID.")
+    else
+        authenticate(employeeID)  -- Send ID to the server for authentication
+        
+        -- Wait for the authentication response
+        local senderId, message = rednet.receive()
 
--- Handle the authentication result
-handleAuthenticationResult(message)
+        handleAuthenticationResult(message)  -- Handle the server's response
+        
+        -- Wait before the next input
+        sleep(2)
+    end
+end
