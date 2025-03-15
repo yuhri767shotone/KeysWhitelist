@@ -1,6 +1,6 @@
 -- Client Authentication Script with Anti-Tamper
 local modemSide = "back"  -- The side where the modem is connected
-local serverID = 1  -- The server ID you want to communicate with
+local serverID = 41  -- The server ID you want to communicate with
 
 -- The required access level (e.g., 1 or higher)
 local requiredAccessLevel = 1
@@ -26,21 +26,22 @@ local function handleAuthenticationResult(message)
         print("Received message: " .. message)  -- Debugging line
         if message:sub(1, 12) == "AUTH_SUCCESS:" then
             -- Parse the rank number from the message
-            local rank = tonumber(message:sub(13))
+            local rank = message:sub(13)
 
-            -- Check if the employee's rank meets the required access level
-            if rank >= requiredAccessLevel then
-                if rank == math.huge then
-                    print("Owner access granted.")
-                    -- Handle owner-specific behavior (e.g., give full access)
-                else
+            -- Check if the rank is math.huge (owner) or a numeric rank
+            if rank == "math.huge" then
+                print("Owner access granted.")
+                -- Handle owner-specific behavior (e.g., give full access)
+            else
+                rank = tonumber(rank)
+                if rank and rank >= requiredAccessLevel then
                     print("Access granted. Rank level " .. rank)
                     -- Handle behavior for employees with sufficient rank
+                else
+                    print("Access denied. Rank " .. rank .. " is insufficient. Required level: " .. requiredAccessLevel)
                 end
-                -- Proceed with the rest of the client operations
-            else
-                print("Access denied. Rank " .. rank .. " is insufficient. Required level: " .. requiredAccessLevel)
             end
+            -- Proceed with the rest of the client operations
         elseif message == "AUTH_DENIED" then
             print("Authentication Denied. Employee ID not found.")
         else
