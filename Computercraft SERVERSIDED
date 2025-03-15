@@ -1,0 +1,62 @@
+-- Authentication Server Script
+local modemSide = "back"  -- The side where the modem is connected
+local diskSide = "top"   -- The side where the disk with users.txt is connected
+local usersFile = "disk/users.txt"  -- Path to the user file
+
+-- Open the modem for communication
+if not peripheral.isPresent(modemSide) or peripheral.getType(modemSide) ~= "modem" then
+    print("Error: Modem not found!")
+    return
+end
+rednet.open(modemSide)
+
+-- Function to load users from users.txt
+local function loadUsers()
+    local users = {}
+    -- Check if the file exists
+    if not fs.exists(usersFile) then
+        print("Error: users.txt file not found on the disk!")
+        return users
+    end
+
+    local file = fs.open(usersFile, "r")
+    for line in file.readAll():gmatch("[^\r\n]+") do
+        -- Format: employee_id=rank (rank is now a number)
+        local id, rank = line:match("^(%d+)%=(%d+)$")
+        if id and rank then
+            users[id] = tonumber(rank)  -- Convert rank to number and store it
+        end
+    end
+    file.close()
+    return users
+end
+
+-- Function to handle authentication
+local function authenticateEmployee(id)
+    local users = loadUsers()
+    local rank = users[id]  -- Check if the ID exists in users.txt
+    return rank  -- Return the rank number if found, nil if not
+end
+
+-- Main server loop
+while true do
+    local senderId, employeeID = rednet.receive()  -- Wait for employee ID from client
+
+    if employeeID then
+        print("Received Employee ID: " .. employeeID)
+
+        -- Authenticate employee and check rank
+        local rank = authenticateEmployee(employeeID)
+        
+        -- Respond with appropriate message
+        if rank then
+            -- Send the rank number to the client if found
+            print("Authentication Success! Rank: " .. rank)
+            rednet.send(senderId, "AUTH_SUCCESS:" .. rank)  -- Send success message with rank number
+        else
+            -- Deny access if the ID doesn't exist
+            print("Authentication Denied! Employee ID not found.")
+            rednet.send(senderId, "AUTH_DENIED")  -- Send access denied message
+        end
+    end
+end
