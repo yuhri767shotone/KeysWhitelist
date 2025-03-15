@@ -1,9 +1,12 @@
--- Client Authentication Script
+-- Client Authentication Script with Anti-Tamper
 local modemSide = "back"  -- The side where the modem is connected
-local serverID = 41 -- The server ID you want to communicate with
+local serverID = 1  -- The server ID you want to communicate with
 
 -- The required access level (e.g., 1 or higher)
 local requiredAccessLevel = 1
+
+-- Anti-tamper functionality (prevents Ctrl+T from stopping the script)
+os.pullEvent = os.pullEventRaw
 
 -- Open the modem for communication
 if not peripheral.isPresent(modemSide) or peripheral.getType(modemSide) ~= "modem" then
