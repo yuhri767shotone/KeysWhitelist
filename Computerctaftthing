@@ -1,4 +1,4 @@
--- Client Authentication Script with Anti-Tamper and Numeric Rank Handling
+--A.  Client Authentication Script with Anti-Tamper and Numeric Rank Handling
 
 local requiredAccessLevel = 1  -- Minimum access level required
 local serverId = 41            -- The server computer's ID
@@ -13,6 +13,13 @@ if not peripheral.isPresent(modemSide) or peripheral.getType(modemSide) ~= "mode
     return
 end
 rednet.open(modemSide)
+
+-- Function to power redstone for 5 seconds
+local function powerRedstone()
+    redstone.setOutput("left", true)
+    sleep(5)
+    redstone.setOutput("left", false)
+end
 
 -- Function to handle the server's authentication response
 local function handleAuthenticationResponse(response)
@@ -33,12 +40,13 @@ local function handleAuthenticationResponse(response)
         -- Check if the rank indicates owner access
         if levelStr == "inf" or levelStr == "math.huge" then
             print("Owner access granted. Exiting...")
-            error("Owner access - terminating client.")
+            error()  -- If owner access, terminate.
             return true
         else
             local level = tonumber(levelStr)
             if level and level >= requiredAccessLevel then
                 print("Access granted. Rank level " .. level)
+                powerRedstone()  -- Power redstone for 5 seconds
                 return true
             else
                 print("Access denied. Insufficient rank. Required level: " .. requiredAccessLevel)
@@ -66,8 +74,12 @@ local function authenticate()
             local senderId, message = rednet.receive()
 
             if handleAuthenticationResponse(message) then
-                break  -- Authentication successful; exit the loop
+                -- If authenticated, clear the terminal and allow another login attempt
+                print("Login successful!")
+                sleep(2)  -- Show a message before clearing the terminal
+                term.clear()
             else
+                -- If not authenticated, prompt again
                 print("Please try again.")
                 sleep(2)
             end
